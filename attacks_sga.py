@@ -123,7 +123,7 @@ def uap_sga(model, loader, nb_epoch, eps, beta=9, step_decay=0.1, loss_function=
         loss = cal_loss(loader_eval, model, delta.data, beta, loss_function)
         losses.append(torch.mean(loss.data).cpu())
 
-        if (epoch + 1) % 10 == 0:
+        if (epoch + 1) % 10 == 0 or epoch == 1:
             torch.save(delta.data,
                        dir_uap + 'sga_' + '%d_%depoch_%dbatch.pth' % (img_num, epoch + 1, batch_size))
 

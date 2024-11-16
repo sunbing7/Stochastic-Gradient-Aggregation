@@ -17,6 +17,10 @@ from torch.utils.data import DataLoader, Subset
 from torchvision import models, transforms
 from torchvision.datasets import ImageFolder
 
+from networks.googlenet import googlenet
+from networks.shufflenetv2 import shufflenetv2
+from networks.mobilenet import MobileNet
+
 
 CIFAR_MEAN = [0.4914, 0.4822, 0.4465]
 CIFAR_STD = [0.2023, 0.1994, 0.2010]
@@ -52,11 +56,23 @@ def normalize_fn(tensor, mean, std):
     return tensor.sub(mean).div(std)
  
 def model_imgnet(model_name):
-    model = eval("torchvision.models.{}(pretrained=True)".format(model_name))
-    model = nn.DataParallel(model).cuda()
-    # Normalization wrapper, so that we don't have to normalize adversarial perturbations
-    normalize = Normalizer(mean = IMGNET_MEAN, std = IMGNET_STD)
-    model = nn.Sequential(normalize, model)
+
+
+    #### CIFAR-10 & CIFAR-100 models ####
+    if model_name == "googlenet":
+        model = googlenet(pretrained=True)
+    elif model_name == "shufflenetv2":
+        model = shufflenetv2(num_classes=101,pretrained=False)
+    elif model_name == "mobilenet":
+        model = MobileNet(num_classes=29, pretrained=False)
+    else:
+        model = eval("torchvision.models.{}(pretrained=True)".format(model_name))
+
+        model = nn.DataParallel(model).cuda()
+        # Normalization wrapper, so that we don't have to normalize adversarial perturbations
+        normalize = Normalizer(mean = IMGNET_MEAN, std = IMGNET_STD)
+        model = nn.Sequential(normalize, model)
+
     model = model.cuda()
     print("Model loading complete.")
     

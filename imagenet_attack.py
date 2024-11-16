@@ -46,6 +46,8 @@ def main(args):
     np.save(dir_uap + "losses.npy", losses)
     plt.savefig(dir_uap + save_name + '_loss_epoch.png')
 
+    torch.save(uap, dir_uap + 'sga_' + str(args.model_name) + '.pth')
+
     time2 = datetime.datetime.now()
     print("time consumed: ", time2 - time1)
 
