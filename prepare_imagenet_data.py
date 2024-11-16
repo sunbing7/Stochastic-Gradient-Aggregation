@@ -60,10 +60,11 @@ def create_imagenet_npy(path_train_imagenet, len_batch=10000,model_dimension=256
     # Load images, pre-process, and save
     for k in range(num_classes):
         for u in range(num_imgs_per_batch):
-            print('Processing image number ', it)
+            #print('Processing image number ', it)
             path_img = os.path.join(dirs[k], Matrix[k][u])
             image = preprocess_image(path_img,model_dimension,center_crop)
             im_array[it:(it+1), :, :, :] = image
             it = it + 1
+    print('Processed image number ', it)
     Imageset = im_array
     return Imageset

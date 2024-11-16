@@ -33,37 +33,34 @@ def main(args):
     beta = args.beta
     step_decay = args.step_decay
     if args.spgd:
-        if args.targeted:
-            uap,losses = uap_sga_targeted(model,
-                                          loader,
-                                          nb_epoch,
-                                          eps,
-                                          beta,
-                                          step_decay,
-                                          loss_function=args.cross_loss,
-                                          target_class=args.target_class,
-                                          batch_size = batch_size,
-                                          loader_eval=loader_eval,
-                                          dir_uap = dir_uap,
-                                          center_crop=center_crop,
-                                          Momentum=args.Momentum,
-                                          img_num=args.num_images)
-        else:
-            uap,losses = uap_spgd(model,
-                                  loader,
-                                  nb_epoch,
-                                  eps,
-                                  beta,
-                                  step_decay,
-                                  loss_function=args.cross_loss,
-                                  batch_size = batch_size,
-                                  loader_eval=loader_eval,
-                                  dir_uap = dir_uap,
-                                  center_crop=center_crop,
-                                  Momentum=args.Momentum,
-                                  img_num=args.num_images)
+        uap,losses = uap_spgd(model,
+                              loader,
+                              nb_epoch,
+                              eps,
+                              beta,
+                              step_decay,
+                              loss_function=args.cross_loss,
+                              batch_size = batch_size,
+                              loader_eval=loader_eval,
+                              dir_uap = dir_uap,
+                              center_crop=center_crop,
+                              Momentum=args.Momentum,
+                              img_num=args.num_images)
     else:
-        uap,losses = uap_sga(model, loader, nb_epoch, eps, beta, step_decay, loss_function=args.cross_loss, batch_size=batch_size, minibatch=args.minibatch, loader_eval=loader_eval, dir_uap = dir_uap,center_crop=center_crop,iter=args.iter,Momentum=args.Momentum,img_num=args.num_images)
+        if args.targeted:
+            uap_sga_targeted(model, loader, nb_epoch, eps, beta, step_decay,
+                             loss_function=args.cross_loss,
+                             target_class=args.target_class,
+                             batch_size=batch_size,
+                             minibatch=args.minibatch,
+                             loader_eval=loader_eval,
+                             dir_uap=dir_uap,
+                             center_crop=center_crop,
+                             iter=args.iter,
+                             Momentum=args.Momentum,
+                             img_num=args.num_images)
+        else:
+            uap,losses = uap_sga(model, loader, nb_epoch, eps, beta, step_decay, loss_function=args.cross_loss, batch_size=batch_size, minibatch=args.minibatch, loader_eval=loader_eval, dir_uap = dir_uap,center_crop=center_crop,iter=args.iter,Momentum=args.Momentum,img_num=args.num_images)
 
     if args.spgd:
         save_name = 'spgd_' + args.model_name

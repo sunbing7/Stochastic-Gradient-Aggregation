@@ -12,7 +12,10 @@ def main(args):
     DEVICE = torch.device("cuda:0")
     time1 = datetime.datetime.now()
     dir_data = args.data_dir
-    dir_uap = args.uaps_save
+    if args.targeted:
+        dir_uap = args.uaps_save + '/' + str(args.model_name) + '/uap_' + str(args.target_class) + '.pth'
+    else:
+        dir_uap = args.uaps_save
     batch_size = args.batch_size
     model_dimension = 299 if args.model_name == 'inception_v3' else 256
     center_crop = 299 if args.model_name == 'inception_v3' else 224
