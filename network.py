@@ -8,6 +8,7 @@ import torchvision.models as models
 from networks.googlenet import googlenet
 from networks.shufflenetv2 import shufflenetv2
 from networks.mobilenet import MobileNet
+from networks.wideresnet import WideResNet
 from collections import OrderedDict
 from util.data import *
 
@@ -25,6 +26,8 @@ def get_network(model_arch, num_classes=1000):
         net = shufflenetv2(num_classes=num_classes,pretrained=False)
     elif model_arch == 'mobilenet':
         net = MobileNet(num_classes=num_classes, pretrained=False)
+    elif model_arch == "wideresnet":
+        net = WideResNet()
     else:
         raise ValueError("Network {} not supported".format(model_arch))
     return net
