@@ -38,6 +38,11 @@ def main(args):
         model = model.cuda()
 
     uap = torch.load(dir_uap)
+
+    if args.targeted:
+        tstd = torch.from_numpy(np.array(std).reshape(1, 3, 1, 1))
+        uap = uap / tstd
+
     _, _, _, _, outputs, labels, y_outputs = evaluate(model, loader, uap = uap,batch_size=batch_size,DEVICE = DEVICE)
 
     print('true image Accuracy:', sum(y_outputs == labels) / len(labels))
