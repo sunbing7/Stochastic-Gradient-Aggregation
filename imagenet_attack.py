@@ -16,7 +16,7 @@ from prepare_imagenet_data import create_imagenet_npy
 def main(args):
     print(args)
     time1 = datetime.datetime.now()
-    dir_uap = args.uaps_save
+    dir_uap = args.uaps_save + '/' + str(args.model_name) + '/'
     batch_size = args.batch_size
     DEVICE = torch.device("cuda:0")
     model_dimension = 299 if args.model_name == 'inception_v3' else 256
@@ -74,7 +74,11 @@ def main(args):
     np.save(dir_uap + "losses.npy", losses)
     plt.savefig(dir_uap + save_name + '_loss_epoch.png')
 
-    torch.save(uap, dir_uap + 'sga_' + str(args.model_name) + '.pth')
+    if args.targeted:
+        post_fix = '_' + str(args.target_class)
+    else:
+        post_fix = '_nontarget'
+    torch.save(uap, dir_uap + 'uap_' + post_fix +'.pth')
 
     time2 = datetime.datetime.now()
     print("time consumed: ", time2 - time1)

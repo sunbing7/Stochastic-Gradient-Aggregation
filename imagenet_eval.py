@@ -22,10 +22,15 @@ def main(args):
 
     uap = torch.load(dir_uap)
     _, _, _, _, outputs, labels, y_outputs = evaluate(model, loader, uap = uap,batch_size=batch_size,DEVICE = DEVICE)
+
     print('true image Accuracy:', sum(y_outputs == labels) / len(labels))
     print('adversarial image Accuracy:', sum(outputs == labels) / len(labels))
     print('fooling rate:', 1-sum(outputs == labels) / len(labels))
     print('fooling ratio:', 1-sum(y_outputs == outputs) / len(labels))
+
+    if args.targeted:
+        print('Target attack success rate:', sum(outputs == args.target_class) / len(labels))
+
     time2 = datetime.datetime.now()
     print("time consumed: ", time2 - time1)
 
@@ -37,6 +42,8 @@ def parse_arguments(argv):
                         help='training set directory')
     parser.add_argument('--batch_size', type=int, help='', default=250)
     parser.add_argument('--model_name', default='vgg16', help='loss type')
+    parser.add_argument('--targeted', type=int, default=0, help='set to 1 if targeted attack')
+    parser.add_argument('--target_class', type=int, default=0, help='target class')
     return parser.parse_args(argv)
 
 
