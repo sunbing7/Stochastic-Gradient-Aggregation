@@ -8,7 +8,7 @@ sys.path.append(os.path.realpath('..'))
 import argparse
 import datetime
 from attack_spgd import uap_spgd
-from attacks_sga import uap_sga
+from attacks_sga import uap_sga, uap_sga_targeted
 from utils import model_imgnet
 from prepare_imagenet_data import create_imagenet_npy
 
@@ -33,7 +33,35 @@ def main(args):
     beta = args.beta
     step_decay = args.step_decay
     if args.spgd:
-        uap,losses = uap_spgd(model, loader, nb_epoch, eps, beta, step_decay,loss_function=args.cross_loss, batch_size = batch_size,loader_eval=loader_eval, dir_uap = dir_uap,center_crop=center_crop,Momentum=args.Momentum,img_num=args.num_images)
+        if args.targeted:
+            uap,losses = uap_sga_targeted(model,
+                                          loader,
+                                          nb_epoch,
+                                          eps,
+                                          beta,
+                                          step_decay,
+                                          loss_function=args.cross_loss,
+                                          target_class=args.target_class,
+                                          batch_size = batch_size,
+                                          loader_eval=loader_eval,
+                                          dir_uap = dir_uap,
+                                          center_crop=center_crop,
+                                          Momentum=args.Momentum,
+                                          img_num=args.num_images)
+        else:
+            uap,losses = uap_spgd(model,
+                                  loader,
+                                  nb_epoch,
+                                  eps,
+                                  beta,
+                                  step_decay,
+                                  loss_function=args.cross_loss,
+                                  batch_size = batch_size,
+                                  loader_eval=loader_eval,
+                                  dir_uap = dir_uap,
+                                  center_crop=center_crop,
+                                  Momentum=args.Momentum,
+                                  img_num=args.num_images)
     else:
         uap,losses = uap_sga(model, loader, nb_epoch, eps, beta, step_decay, loss_function=args.cross_loss, batch_size=batch_size, minibatch=args.minibatch, loader_eval=loader_eval, dir_uap = dir_uap,center_crop=center_crop,iter=args.iter,Momentum=args.Momentum,img_num=args.num_images)
 
@@ -69,6 +97,8 @@ def parse_arguments(argv):
     parser.add_argument('--iter', type=int,default=4, help='inner iteration num')
     parser.add_argument('--Momentum', type=int, default=0, help='Momentum item')
     parser.add_argument('--cross_loss', type=int, default=0, help='loss type')
+    parser.add_argument('--targeted', type=int, default=0, help='set to 1 if targeted attack')
+    parser.add_argument('--target_class', type=int, default=0, help='target class')
     return parser.parse_args(argv)
 
 
