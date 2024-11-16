@@ -9,8 +9,9 @@ from networks.googlenet import googlenet
 from networks.shufflenetv2 import shufflenetv2
 from networks.mobilenet import MobileNet
 from collections import OrderedDict
+from util.data import *
 
-def get_network(model_arch, input_size, num_classes=1000, finetune=False):
+def get_network(model_arch, num_classes=1000):
 
     if model_arch == "googlenet":
         net = googlenet(pretrained=True)
@@ -51,9 +52,12 @@ def get_num_non_trainable_parameters(model):
     model_parameters = filter(lambda p: p.requires_grad==False, model.parameters())
     return sum([np.prod(p.size()) for p in model_parameters])
 
+#args.model_name, args.model_name, args.dataset
+def get_my_model(weight_path, model_name, arch, dataset):
+    weight_path = weight_path + '/' + str(model_name)
+    num_classes, (mean, std), input_size, num_channels = get_data_specs(dataset)
 
-def get_my_model(weight_path, arch, input_size, num_classes, dataset, model_name):
-    target_network = get_network(arch, input_size, num_classes, finetune=False)
+    target_network = get_network(arch, num_classes)
 
     # Set the target model into evaluation mode
     target_network.eval()

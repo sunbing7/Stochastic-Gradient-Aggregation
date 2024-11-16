@@ -11,7 +11,7 @@ def cal_loss(loader, model, delta, beta, loss_function):
     model.eval()
     with torch.no_grad():
         for i, data in enumerate(loader):
-            x_val = data.cuda()
+            x_val = data[0].cuda()  #mytest
             outputs_ori = model(x_val.cuda())
             _, target_label = torch.max(outputs_ori, 1)
             perturbed = torch.clamp((x_val + delta), 0, 1)
@@ -133,7 +133,7 @@ def uap_sga(model, loader, nb_epoch, eps, beta=9, step_decay=0.1, loss_function=
 def uap_sga_targeted(model, loader, nb_epoch, eps, beta=9, step_decay=0.1, loss_function=None,
                      target_class=0,
                      uap_init=None, batch_size=None, minibatch=10, loader_eval=None, dir_uap=None, center_crop=224,
-                     iter=4, Momentum=0, img_num=10000):
+                     iter=4, Momentum=0, img_num=10000, dataset='imagenet'):
     '''
     INPUT
     model       model
@@ -174,6 +174,7 @@ def uap_sga_targeted(model, loader, nb_epoch, eps, beta=9, step_decay=0.1, loss_
             return loss
 
     batch_delta.requires_grad_()
+
     v = 0
     for epoch in range(nb_epoch):
         print('epoch %i/%i' % (epoch + 1, nb_epoch))
@@ -181,12 +182,16 @@ def uap_sga_targeted(model, loader, nb_epoch, eps, beta=9, step_decay=0.1, loss_
         # perturbation step size with decay
         eps_step = eps * step_decay
         for i, data in enumerate(loader):
-            x_val = data
+            if 0: #dataset == 'imagenet':
+                x_val = data.cuda()
+                target_class_label = torch.ones(data.shape[0], dtype=torch.int64) * target_class
+            else:
+                x_val = data[0].cuda()
+                y_val = data[1].cuda()
+                target_class_label = torch.ones(data[0].shape[0], dtype=torch.int64) * target_class
             with torch.no_grad():
-                outputs_ori = model(x_val.cuda())
+                outputs_ori = model(x_val)
                 _, target_label = torch.max(outputs_ori, 1)
-
-            target_class_label = torch.ones(data.shape[0], dtype=torch.int64) * target_class
 
             num = x_val.shape[0]
             k = iter
@@ -197,7 +202,7 @@ def uap_sga_targeted(model, loader, nb_epoch, eps, beta=9, step_decay=0.1, loss_
                 if j > 0 or i > 0 or epoch > 0:
                     batch_delta.grad.data.zero_()
                 batch_delta.data = delta_inner.unsqueeze(0).repeat([minibatch, 1, 1, 1])
-                perturbed = torch.clamp((x_val[label] + batch_delta).cuda(), 0, 1)
+                perturbed = torch.clamp((x_val[label] + batch_delta.cuda()).cuda(), 0, 1)
                 outputs = model(perturbed)
                 # loss function value
                 if loss_function:

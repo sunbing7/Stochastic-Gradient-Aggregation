@@ -61,17 +61,13 @@ def model_imgnet(model_name):
     #### CIFAR-10 & CIFAR-100 models ####
     if model_name == "googlenet":
         model = googlenet(pretrained=True)
-    elif model_name == "shufflenetv2":
-        model = shufflenetv2(num_classes=101,pretrained=False)
-    elif model_name == "mobilenet":
-        model = MobileNet(num_classes=29, pretrained=False)
     else:
         model = eval("torchvision.models.{}(pretrained=True)".format(model_name))
 
-        model = nn.DataParallel(model).cuda()
-        # Normalization wrapper, so that we don't have to normalize adversarial perturbations
-        normalize = Normalizer(mean = IMGNET_MEAN, std = IMGNET_STD)
-        model = nn.Sequential(normalize, model)
+    model = nn.DataParallel(model).cuda()
+    # Normalization wrapper, so that we don't have to normalize adversarial perturbations
+    normalize = Normalizer(mean = IMGNET_MEAN, std = IMGNET_STD)
+    model = nn.Sequential(normalize, model)
 
     model = model.cuda()
     print("Model loading complete.")

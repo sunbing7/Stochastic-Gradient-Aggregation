@@ -11,23 +11,47 @@ from attack_spgd import uap_spgd
 from attacks_sga import uap_sga, uap_sga_targeted
 from utils import model_imgnet
 from prepare_imagenet_data import create_imagenet_npy
+from network import *
+from util.data import *
 
 
 def main(args):
     print(args)
     time1 = datetime.datetime.now()
-    dir_uap = args.uaps_save + '/' + str(args.model_name) + '/'
+    dir_uap = args.uaps_save + '/' + str(args.dataset) + '_'+ str(args.model_name) + '/'
     batch_size = args.batch_size
     DEVICE = torch.device("cuda:0")
-    model_dimension = 299 if args.model_name == 'inception_v3' else 256
-    center_crop = 299 if args.model_name == 'inception_v3' else 224
-    X = create_imagenet_npy(args.data_dir, len_batch=args.num_images,model_dimension = model_dimension,center_crop=center_crop)
     torch.manual_seed(0)
-    loader = torch.utils.data.DataLoader(X,batch_size=batch_size,shuffle=True,num_workers=0)
-    loader_eval = torch.utils.data.DataLoader(X,batch_size=100,shuffle=True,num_workers=0)
-    model = model_imgnet(args.model_name)
 
+    if not args.targeted:
+        model_dimension = 299 if args.model_name == 'inception_v3' else 256
+        center_crop = 299 if args.model_name == 'inception_v3' else 224
+        X = create_imagenet_npy(args.data_dir, len_batch=args.num_images, model_dimension=model_dimension,
+                                center_crop=center_crop)
+        loader = torch.utils.data.DataLoader(X, batch_size=batch_size, shuffle=True, num_workers=0)
+        loader_eval = torch.utils.data.DataLoader(X, batch_size=100, shuffle=True, num_workers=0)
+        model = model_imgnet(args.model_name)
+    else:
+        _, data_test = get_data(args.dataset, args.dataset, is_attack=True)
 
+        loader_eval = torch.utils.data.DataLoader(data_test,
+                                                  batch_size=100,
+                                                  shuffle=False,
+                                                  num_workers=0,
+                                                  pin_memory=True)
+
+        num_classes, (mean, std), input_size, num_channels = get_data_specs(args.dataset)
+        center_crop = input_size
+        data_train, _ = get_data(args.dataset, args.dataset, is_attack=True)
+
+        loader = torch.utils.data.DataLoader(data_train,
+                                             batch_size=batch_size,
+                                             shuffle=True,
+                                             num_workers=0,
+                                             pin_memory=True)
+
+        model = get_my_model(args.weight_path, args.model_file_name, args.model_name, args.dataset)
+        model = model.cuda()
     nb_epoch = args.epoch
     eps = args.alpha / 255
     beta = args.beta
@@ -48,17 +72,18 @@ def main(args):
                               img_num=args.num_images)
     else:
         if args.targeted:
-            uap_sga_targeted(model, loader, nb_epoch, eps, beta, step_decay,
-                             loss_function=args.cross_loss,
-                             target_class=args.target_class,
-                             batch_size=batch_size,
-                             minibatch=args.minibatch,
-                             loader_eval=loader_eval,
-                             dir_uap=dir_uap,
-                             center_crop=center_crop,
-                             iter=args.iter,
-                             Momentum=args.Momentum,
-                             img_num=args.num_images)
+            uap,losses = uap_sga_targeted(model, loader, nb_epoch, eps, beta, step_decay,
+                                          loss_function=args.cross_loss,
+                                          target_class=args.target_class,
+                                          batch_size=batch_size,
+                                          minibatch=args.minibatch,
+                                          loader_eval=loader_eval,
+                                          dir_uap=dir_uap,
+                                          center_crop=center_crop,
+                                          iter=args.iter,
+                                          Momentum=args.Momentum,
+                                          img_num=args.num_images,
+                                          dataset=args.dataset)
         else:
             uap,losses = uap_sga(model, loader, nb_epoch, eps, beta, step_decay, loss_function=args.cross_loss, batch_size=batch_size, minibatch=args.minibatch, loader_eval=loader_eval, dir_uap = dir_uap,center_crop=center_crop,iter=args.iter,Momentum=args.Momentum,img_num=args.num_images)
 
@@ -72,9 +97,9 @@ def main(args):
     plt.savefig(dir_uap + save_name + '_loss_epoch.png')
 
     if args.targeted:
-        post_fix = '_' + str(args.target_class)
+        post_fix = str(args.target_class)
     else:
-        post_fix = '_nontarget'
+        post_fix = 'nontarget'
     torch.save(uap, dir_uap + 'uap_' + post_fix +'.pth')
 
     time2 = datetime.datetime.now()
@@ -82,6 +107,8 @@ def main(args):
 
 def parse_arguments(argv):
     parser = argparse.ArgumentParser()
+    parser.add_argument('--dataset', default='imagenet',
+                        help='dataset')
     parser.add_argument('--data_dir', default='/../imagenet/train/',
                         help='training set directory')
     parser.add_argument('--uaps_save', default='./uaps_save/spgd/',
@@ -95,6 +122,8 @@ def parse_arguments(argv):
     parser.add_argument('--spgd', type=int,default=1, help='loss type')
     parser.add_argument('--num_images', type=int, default=10000, help='num of training images')
     parser.add_argument('--model_name', default='vgg16', help='proxy model')
+    parser.add_argument('--model_file_name', default='vgg16')
+    parser.add_argument('--weight_path', default='/../imagenet/train/')
     parser.add_argument('--iter', type=int,default=4, help='inner iteration num')
     parser.add_argument('--Momentum', type=int, default=0, help='Momentum item')
     parser.add_argument('--cross_loss', type=int, default=0, help='loss type')
