@@ -3,13 +3,13 @@ import numpy as np
 import os
 import sys
 import torch
-
+import torch.nn as nn
 sys.path.append(os.path.realpath('..'))
 import argparse
 import datetime
 from attack_spgd import uap_spgd
 from attacks_sga import uap_sga, uap_sga_targeted
-from utils import model_imgnet
+from utils import *
 from prepare_imagenet_data import create_imagenet_npy
 from network import *
 from util.data import *
@@ -35,7 +35,7 @@ def main(args):
         _, data_test = get_data(args.dataset, args.dataset, is_attack=True)
 
         loader_eval = torch.utils.data.DataLoader(data_test,
-                                                  batch_size=100,
+                                                  batch_size=args.test_batch_size,
                                                   shuffle=False,
                                                   num_workers=0,
                                                   pin_memory=True)
@@ -51,6 +51,12 @@ def main(args):
                                              pin_memory=True)
 
         model = get_my_model(args.weight_path, args.model_file_name, args.model_name, args.dataset)
+
+        model = nn.DataParallel(model).cuda()
+        # Normalization wrapper, so that we don't have to normalize adversarial perturbations
+        normalize = Normalizer(mean=mean, std=std)
+        model = nn.Sequential(normalize, model)
+
         model = model.cuda()
     nb_epoch = args.epoch
     eps = args.alpha / 255
@@ -82,10 +88,24 @@ def main(args):
                                           center_crop=center_crop,
                                           iter=args.iter,
                                           Momentum=args.Momentum,
-                                          img_num=args.num_images,
-                                          dataset=args.dataset)
+                                          img_num=args.num_images)
         else:
-            uap,losses = uap_sga(model, loader, nb_epoch, eps, beta, step_decay, loss_function=args.cross_loss, batch_size=batch_size, minibatch=args.minibatch, loader_eval=loader_eval, dir_uap = dir_uap,center_crop=center_crop,iter=args.iter,Momentum=args.Momentum,img_num=args.num_images)
+            uap,losses = uap_sga(model, loader, nb_epoch, eps, beta, step_decay, loss_function=args.cross_loss,
+                                 batch_size=batch_size, minibatch=args.minibatch, loader_eval=loader_eval,
+                                 dir_uap = dir_uap,center_crop=center_crop,iter=args.iter,
+                                 Momentum=args.Momentum,img_num=args.num_images)
+
+    _, _, _, _, outputs, labels, y_outputs = evaluate(model, loader_eval, uap=uap,
+                                                      batch_size=args.test_batch_size, DEVICE=DEVICE)
+
+    print('true image Accuracy:', sum(y_outputs == labels) / len(labels))
+    print('adversarial image Accuracy:', sum(outputs == labels) / len(labels))
+    print('fooling rate:', 1-sum(outputs == labels) / len(labels))
+    print('fooling ratio:', 1-sum(y_outputs == outputs) / len(labels))
+
+    if args.targeted:
+        print('Target attack success rate:', sum(outputs == args.target_class) / len(labels))
+
 
     if args.spgd:
         save_name = 'spgd_' + args.model_name
@@ -105,6 +125,7 @@ def main(args):
     time2 = datetime.datetime.now()
     print("time consumed: ", time2 - time1)
 
+
 def parse_arguments(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', default='imagenet',
@@ -114,6 +135,7 @@ def parse_arguments(argv):
     parser.add_argument('--uaps_save', default='./uaps_save/spgd/',
                         help='training set directory')
     parser.add_argument('--batch_size', type=int, help='batch size', default=250)
+    parser.add_argument('--test_batch_size', type=int, help='batch size', default=12)
     parser.add_argument('--minibatch', type=int, help='inner batch size for SGA', default=10)
     parser.add_argument('--alpha', type=float, default=10, help='aximum perturbation value (L-infinity) norm')
     parser.add_argument('--beta', type=float, default=9, help='clamping value')

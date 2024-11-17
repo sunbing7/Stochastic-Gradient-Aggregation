@@ -118,7 +118,8 @@ def evaluate(model, loader, uap = None, n = 5,batch_size =None, DEVICE=None):
                 out = torch.nn.functional.softmax(model(x_val), dim = 1)
             else:
                 y_ori = torch.nn.functional.softmax(model(x_val), dim = 1)
-                perturbed = torch.clamp((x_val + uap), 0, 1) # clamp to [0, 1]
+                perturbed = x_val + uap
+                perturbed = torch.clamp(perturbed, 0, 1) # clamp to [0, 1]
                 out = torch.nn.functional.softmax(model(perturbed), dim = 1)
 
             probs.append(out.cpu().numpy())

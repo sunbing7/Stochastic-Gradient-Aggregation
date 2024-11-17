@@ -66,7 +66,8 @@ def get_data(dataset, pretrained_dataset, preprocess=None, is_attack=False):
                 # transforms.Resize(299), # inception_v3
                 transforms.RandomCrop(input_size),
                 transforms.ToTensor(),
-                transforms.Normalize(mean, std)])
+                #transforms.Normalize(mean, std)
+        ])
 
         full_val = dset.ImageFolder(root=traindir, transform=train_transform)
         full_val = fix_labels(full_val)
@@ -121,13 +122,15 @@ def get_data(dataset, pretrained_dataset, preprocess=None, is_attack=False):
             transforms.RandomRotation(degrees=15),
             transforms.RandomHorizontalFlip(),
             transforms.CenterCrop(size=input_size),
-            transforms.Normalize(mean, std)])
+            #transforms.Normalize(mean, std)
+        ])
 
         test_transform = transforms.Compose([
             transforms.Resize(256),
             transforms.CenterCrop(input_size),
             transforms.ToTensor(),
-            transforms.Normalize(mean, std)])
+            #transforms.Normalize(mean, std)
+        ])
 
         train_data_full = dset.ImageFolder(root=traindir, transform=train_transform)
         if is_attack:
@@ -153,13 +156,15 @@ def get_data(dataset, pretrained_dataset, preprocess=None, is_attack=False):
             transforms.Resize(input_size),
             transforms.RandomCrop(input_size),
             transforms.ToTensor(),
-            transforms.Normalize(mean, std)])
+            #transforms.Normalize(mean, std)
+            ])
 
         test_transform = transforms.Compose([
             transforms.Resize(input_size),
             transforms.CenterCrop(input_size),
             transforms.ToTensor(),
-            transforms.Normalize(mean, std)])
+            #transforms.Normalize(mean, std)
+            ])
 
         train_data_full = dset.ImageFolder(root=traindir, transform=train_transform)
         if is_attack:
@@ -184,11 +189,13 @@ def get_data(dataset, pretrained_dataset, preprocess=None, is_attack=False):
             transforms.RandomVerticalFlip(),
             transforms.RandomRotation(degrees=15),
             transforms.ToTensor(),
-            transforms.Normalize(mean, std)])
+            #transforms.Normalize(mean, std)
+            ])
 
         test_transform = transforms.Compose([
             transforms.ToTensor(),
-            transforms.Normalize(mean, std)])
+            #transforms.Normalize(mean, std)
+            ])
 
         train_dataset = EuroSAT(transform=train_transform)
 

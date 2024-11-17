@@ -1,13 +1,14 @@
 import os
 import sys
 import torch
+import torch.nn as nn
 import argparse
 import datetime
 from network import *
 from util.data import *
 sys.path.append(os.path.realpath('..'))
 
-from utils import loader_imgnet, model_imgnet, evaluate
+from utils import *
 
 def main(args):
     print(args)
@@ -35,13 +36,17 @@ def main(args):
                                              pin_memory=True)
         num_classes, (mean, std), input_size, num_channels = get_data_specs(args.dataset)
         model = get_my_model(args.weight_path, args.model_file_name, args.model_name, args.dataset)
+        model = nn.DataParallel(model).cuda()
+        # Normalization wrapper, so that we don't have to normalize adversarial perturbations
+        normalize = Normalizer(mean=mean, std=std)
+        model = nn.Sequential(normalize, model)
         model = model.cuda()
 
     uap = torch.load(dir_uap)
 
-    if args.targeted:
-        tstd = torch.from_numpy(np.array(std).reshape(1, 3, 1, 1))
-        uap = uap / tstd
+    #if args.targeted:
+    #    tstd = torch.from_numpy(np.array(std).reshape(3, 1, 1))
+    #    uap = (uap / tstd).float()
 
     _, _, _, _, outputs, labels, y_outputs = evaluate(model, loader, uap = uap,batch_size=batch_size,DEVICE = DEVICE)
 
