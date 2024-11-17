@@ -26,7 +26,7 @@ done
 #sga shufflenetv2 caltech
 for TARGET_CLASS in {37,85,55,79,21,9,4,6}
 do
-    CUDA_VISIBLE_DEVICES='0' python imagenet_attack.py --dataset=caltech --targeted=1 --target_class=$TARGET_CLASS --model_file_name=shufflenetv2_caltech.pth --weight_path=/root/autodl-tmp/sunbing/workspace/uap/my_result/uap_virtual_data.pytorch/models/caltech_shufflenetv2_123 --uaps_save=/root/autodl-tmp/sunbing/workspace/uap/my_result/sga/uap_save/sga/ --batch_size=25 --test_batch_size=12 --minibatch=10 --alpha=10 --epoch=5 --spgd=0 --num_images=10000 --model_name=sufflenetv2 --Momentum=0 --cross_loss=1
+    CUDA_VISIBLE_DEVICES='0' python imagenet_attack.py --dataset=caltech --targeted=1 --target_class=$TARGET_CLASS --model_file_name=shufflenetv2_caltech.pth --weight_path=/root/autodl-tmp/sunbing/workspace/uap/my_result/uap_virtual_data.pytorch/models/caltech_shufflenetv2_123 --uaps_save=/root/autodl-tmp/sunbing/workspace/uap/my_result/sga/uap_save/sga/ --batch_size=25 --test_batch_size=12 --minibatch=10 --alpha=10 --epoch=5 --spgd=0 --num_images=10000 --model_name=shufflenetv2 --Momentum=0 --cross_loss=1
 done
 ################################################################################################################################################
 #sga resnet50 eurosat
